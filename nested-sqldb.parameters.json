@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "administratorLogin": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "administratorLoginPassword": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "serverName": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "enableAds": {
+            "value": true
+        },
+        "enableVa": {
+            "value": true
+        },
+        "tier": {
+            "value": "Standard"
+        },
+        "dbSkuName": {
+            "value": "S0"
+        },
+        "databaseNames": {
+            "value": [
+                "db1",
+                "db2"
+            ]
+        },
+        "databaseCollation": {
+            "value": "SQL_Latin1_General_CP1_CI_AS"
+        },
+        "alertEmailAddresses": {
+            "value": [
+                "user1@example.com",
+                "user2@example.com"
+            ]
+        }
+    }
+}

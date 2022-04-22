@@ -1,0 +1,746 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.1",
+    "parameters": {
+        "solutionType": {
+        	"type": "string",
+        	"defaultValue": "Azure_SQL",
+       		"allowedValues": [
+            	"Azure_SQL",
+           	    "Managed_Instance"
+        ]
+        },
+        "elasticPool": {
+            "type": "string",
+            "defaultValue": "Yes",
+            "allowedValues": [
+                "Yes",
+                "No"
+        ]
+        },
+        "administratorLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "The SQL Server administrator login"
+            }
+        },
+        "administratorLoginPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The SQL Server administrator login password."
+            }
+        },
+        "collation": {
+            "type": "string",
+            "defaultValue": "SQL_Latin1_General_CP1_CI_AS",
+            "metadata": {
+                "description": "The collation of the database(s)."
+            }
+        },
+        "managedInstanceName": {
+            "type": "string",
+            "defaultValue": "ManagedInstanceName",
+            "metadata": {
+                "description": "Name of the managed instance."
+            }
+        },
+        "skuName": {
+            "type": "string",
+            "defaultValue": "GP_Gen4",
+            "metadata": {
+                "description": "GP: General Purpose, BC: Business Critical"
+            },
+            "allowedValues": [
+            	"GP_Gen4",
+                "GP_Gen5",
+                "BC_Gen4",
+                "BC_Gen5"   
+            ]
+        },
+        "skuEdition": {
+            "type": "string",
+            "defaultValue": "GeneralPurpose",
+            "metadata": {
+                "description": "SKU Edition. Business Critical is for higher I/O requirement databases, where as General Purpose is for databases with standard I/O requirements."
+            },
+            "allowedValues": [
+            	"GeneralPurpose",
+           	    "BusinessCritical"
+            ]
+        },
+        "storageSizeInGB": {
+            "type": "int",
+            "defaultValue": 32,
+            "metadata": {
+                "description": "Total storage size of the managed instance in gigabytes."
+            }
+        },
+        "vCores": {
+            "type": "int",
+            "defaultValue": 16,
+            "metadata": {
+                "description": "Number of vCores in the managed instance."
+            }
+        },
+        "licenseType": {
+            "type": "string",
+            "defaultValue": "LicenseIncluded"
+        },
+        "hardwareFamily": {
+            "type": "string",
+            "defaultValue": "Gen4",
+            "metadata": {
+                "description": "Hardware family of the managed instance. Gen4 or Gen5."
+            },
+            "allowedValues": [
+            	"Gen4",
+           	    "Gen5"
+            ]
+        },
+        "dnsZonePartner": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "databaseNames": {
+            "type": "array",
+            "defaultValue": [
+              "db1",
+              "db2"
+            ],
+            "metadata": {
+              "description": "The SQL Databases names."
+            }
+          },
+          "databaseCollation": {
+            "type": "string",
+            "defaultValue": "SQL_Latin1_General_CP1_CI_AS",
+            "metadata": {
+              "description": "The SQL Database collation."
+            }
+          },
+        "elasticPoolName": {
+            "type": "string",
+            "defaultValue": "elasticPoolName",
+            "metadata": {
+                "description": "Name of the SQL Elastic Pool."
+            }
+        },
+        "elasticPoolEdition": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "Edition of the Elastic Pool. Basic - low demanding workloads, Standard - typical workloads, Premium - I/O intensive workloads."
+            },
+            "allowedValues": [
+            	"Basic",
+                "Standard",
+                "Premium" 
+            ]
+        },
+        "poolDtu": {
+            "type": "int",
+            "defaultValue": 100,
+            "metadata": {
+                "description": "eDTU's of the Elastic Pool."
+            }
+        },
+        "databaseDtuMin": {
+            "type": "int",
+            "defaultValue": 0,
+            "metadata": {
+                "description": "Minimum eDTU's per database."
+            }
+                },
+                
+        "databaseDtuMax": {
+            "type": "int",
+            "defaultValue": 100,
+            "metadata": {
+                "description": "Maximum eDTU's per database."
+            }
+        },
+        "tier": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "Database server Tier. Basic, Standard (S0), Premium (P1)"
+            },
+            "allowedValues": [
+            	"Basic",
+                "Standard",
+                "Premium" 
+            ]
+        },
+        "dbSkuName": {
+            "type": "string",
+            "defaultValue": "S0",
+            "metadata": {
+                "description": "Database tier SKU identifier. Basic. Standard (S0), Premium (P1)"
+            },
+            "allowedValues": [
+            	"Basic",
+                "S0",
+                "P1" 
+            ]
+        },
+        "maxSizeBytes": {
+            "type": "int",
+            "defaultValue": 268435456000
+        },
+        "serverName": {
+            "type": "string",
+            "defaultValue": "testsqltest"
+        },
+        "zoneRedundant": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Zone Redundancy. Default is 'True'."
+            }
+        },
+        "dbLicenseType": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "readScaleOut": {
+            "type": "string",
+            "defaultValue": "Disabled"
+        },
+        "numberOfReplicas": {
+            "type": "int",
+            "defaultValue": 0
+        },
+        "enableATP": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Enable Advanced Threat Protection. Default is 'True'."
+            }
+        },
+        "allowAzureIps": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Allow Azure IP's access. Default is 'True'."
+            }
+        }
+
+        
+    },
+    "variables": {
+        "resourceGroupLocation": "[resourceGroup().location]",
+        "virtualNetworkName": "[concat('vnet-', parameters('managedInstanceName'))]",
+        "routeTableName": "[concat('rt-', parameters('managedInstanceName'))]",
+        "networkSecurityGroupName": "[concat('nsg-', parameters('managedInstanceName'))]",
+        "addressPrefix": "10.0.0.0/16",
+        "subnetName": "ManagedInstance",
+        "subnetPrefix": "10.0.0.0/24",
+        "templateUri": "https://raw.githubusercontent.com/rbergertd/sql/master/"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[equals(parameters('solutionType'), 'Azure_SQL')]",
+            "apiVersion": "2018-05-01",
+            "name": "sqlDatabase",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('templateUri'), 'nested-sqldbelastic-qstart.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                  
+                    "administratorLogin": {
+                        "value": "[parameters('administratorLogin')]"
+                    },
+                    "administratorLoginPassword": {
+                        "value": "[parameters('administratorLoginPassword')]"
+                    },
+                    "databaseCollation": {
+                        "value": "[parameters('databaseCollation')]"
+                    },
+                    "databaseNames": {
+                        "value": "[parameters('databaseNames')]"
+                    },
+                    "elasticPool": {
+                        "value": "[parameters('elasticPool')]"
+                    },
+                    "elasticPoolName": {
+                        "value": "[parameters('elasticPoolName')]"
+                    },
+                    "elasticPoolEdition": {
+                        "value": "[parameters('elasticPoolEdition')]"
+                    },
+                    "poolDtu": {
+                        "value": "[parameters('poolDtu')]"
+                    },
+                    "databaseDtuMin": {
+                        "value": "[parameters('databaseDtuMin')]"
+                            },
+                    "databaseDtuMax": {
+                        "value": "[parameters('databaseDtuMax')]"
+                    },
+                    "dbSkuName": {
+                        "value": "[parameters('dbSkuName')]"
+                    },
+                    "maxSizeBytes": {
+                        "value": "[parameters('maxSizeBytes')]"
+                    },
+                    "serverName": {
+                        "value": "[parameters('serverName')]"
+                    },
+
+                    "zoneRedundant": {
+                        "value": "[parameters('zoneRedundant')]"
+                    },
+                    "dbLicenseType": {
+                        "value": "[parameters('dbLicenseType')]"
+                    },
+                    "readScaleOut": {
+                        "value": "[parameters('readScaleOut')]"
+                    },
+                    "numberOfReplicas": {
+                        "value": "[parameters('numberOfReplicas')]"
+                    },
+                    "enableATP": {
+                        "value": "[parameters('enableATP')]"
+                    },
+                    "allowAzureIps": {
+                        "value": "[parameters('allowAzureIps')]"
+                    }                  
+                }
+            }
+        },       
+        {
+            "apiVersion": "2017-10-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "condition": "[equals(parameters('solutionType'), 'Managed_Instance')]",
+            "name": "[variables('networkSecurityGroupName')]",
+            "location": "[variables('resourceGroupLocation')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "allow_management_inbound",
+                        "properties": {
+                            "description": "Allow inbound management traffic",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRanges": [
+                                "9000",
+                                "9003",
+                                "1438",
+                                "1440",
+                                "1452"
+                            ],
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow_misubnet_inbound",
+                        "properties": {
+                            "description": "Allow inbound traffic inside the subnet",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "[variables('addressPrefix')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 200,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow_health_probe_inbound",
+                        "properties": {
+                            "description": "Allow health probe",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 300,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow_tds_inbound",
+                        "properties": {
+                            "description": "Allow access to data",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "1433",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "deny_all_inbound",
+                        "properties": {
+                            "description": "Deny all other inbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 4096,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow_management_outbound",
+                        "properties": {
+                            "description": "Allow outbound management traffic",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRanges": [
+                                "80",
+                                "443",
+                                "12000"
+                            ],
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "allow_misubnet_outbound",
+                        "properties": {
+                            "description": "Allow outbound traffic inside the subnet",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "[variables('addressPrefix')]",
+                            "access": "Allow",
+                            "priority": 200,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "deny_all_outbound",
+                        "properties": {
+                            "description": "Deny all other outbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 4096,
+                            "direction": "Outbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/routeTables",
+            "condition": "[equals(parameters('solutionType'), 'Managed_Instance')]",
+            "name": "[variables('routeTableName')]",
+            "apiVersion": "2018-02-01",
+            "location": "[variables('resourceGroupLocation')]",
+            "properties": {
+                "disableBgpRoutePropagation": false,
+                "routes": [
+                    {
+                        "name": "subnet_to_vnetlocal",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetPrefix')]",
+                            "nextHopType": "VnetLocal"
+                        }
+                    },
+                    {
+                        "name": "mi-0-5-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "0.0.0.0/5",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-8-7-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "8.0.0.0/7",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-11-8-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "11.0.0.0/8",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-12-6-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "12.0.0.0/6",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-16-4-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "16.0.0.0/4",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-32-3-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "32.0.0.0/3",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-64-2-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "64.0.0.0/2",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-128-3-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "128.0.0.0/3",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-160-5-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "160.0.0.0/5",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-168-6-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "168.0.0.0/6",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-172-1-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "172.0.0.0/12",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-172-32-11-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "172.32.0.0/11",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-172-64-10-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "172.64.0.0/10",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-172-128-9-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "172.128.0.0/9",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-173-8-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "173.0.0.0/8",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-174-7-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "174.0.0.0/7",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-176-4-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "176.0.0.0/4",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-9-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.0.0.0/9",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-128-11-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.128.0.0/11",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-160-13-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.160.0.0/13",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-169-16-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.169.0.0/16",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-170-15-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.170.0.0/15",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-172-14-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.172.0.0/14",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-176-12-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.176.0.0/12",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-192-192-10-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "192.192.0.0/10",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-193-8-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "193.0.0.0/8",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-194-7-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "194.0.0.0/7",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-196-6-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "196.0.0.0/6",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-200-5-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "200.0.0.0/5",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-208-4-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "208.0.0.0/4",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "mi-224-3-nexthop-internet",
+                        "properties": {
+                            "addressPrefix": "224.0.0.0/3",
+                            "nextHopType": "Internet"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('virtualNetworkName')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "condition": "[equals(parameters('solutionType'), 'Managed_Instance')]",
+            "apiVersion": "2018-02-01",
+            "dependsOn": [
+                "[variables('routeTableName')]",
+                "[variables('networkSecurityGroupName')]"
+            ],
+            "location": "[variables('resourceGroupLocation')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetPrefix')]",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', variables('routeTableName'))]"
+                            },
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Sql/managedInstances",
+            "location": "[variables('resourceGroupLocation')]",
+            "name": "[parameters('managedInstanceName')]",
+            "condition": "[equals(parameters('solutionType'), 'Managed_Instance')]",
+            "dependsOn": [
+                "[variables('virtualNetworkName')]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "sku": {
+                "name": "[parameters('skuName')]",
+                "tier": "[parameters('skuEdition')]"
+            },
+            "properties": {
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "subnetId": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')),'/subnets/', variables('subnetName'))]",
+                "storageSizeInGB": "[parameters('storageSizeInGB')]",
+                "vCores": "[parameters('vCores')]",
+                "licenseType": "[parameters('licenseType')]",
+                "hardwareFamily": "[parameters('hardwareFamily')]",
+                "dnsZonePartner": "[parameters('dnsZonePartner')]",
+                "collation": "[parameters('collation')]"
+            }
+        }
+        
+    ]
+}

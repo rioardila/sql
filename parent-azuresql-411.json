@@ -1,0 +1,416 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "elasticPool": {
+            "type": "string",
+            "defaultValue": "Yes",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ]
+        },
+        "administratorLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "The SQL Server administrator login"
+            }
+        },
+        "administratorLoginPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The SQL Server administrator login password."
+            }
+        },
+        "serverName": {
+            "type": "string",
+            "metadata": {
+                "description": "The SQL Server name."
+            }
+        },
+        "elasticPoolName": {
+            "type": "string",
+            "metadata": {
+                "description": "The Elastic Pool name."
+            }
+        },
+        "poolLimit": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The Elastic Pool DTU or vCore Limit"
+            },
+            "allowedValues": [
+                "50",
+                "100",
+                "200",
+                "300",
+                "400",
+                "800",
+                "1200",
+                "1600",
+                "2000",
+                "2500",
+                "3000",
+                "125",
+                "250",
+                "500",
+                "1000",
+                "1500",
+                "2000",
+                "2500",
+                "3000",
+                "3500",
+                "4000",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "16",
+                "24",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10",
+                "12",
+                "14",
+                "16",
+                "18",
+                "20",
+                "24",
+                "32",
+                "40",
+                "80"
+            ]
+        },
+        "poolSize": {
+            "type": "int",
+            "defaultValue": 107374182400,
+            "metadata": {
+                "description": "The Elastic Pool total storage (in MB)."
+            }
+        },
+        "perDatabasePerformanceMin": {
+            "type": "string",
+            "defaultValue": "0",
+            "metadata": {
+                "description": "The per database performance minimum. This should always be set to 0."
+            }
+        },
+        "perDatabasePerformanceMax": {
+            "type": "string",
+            "defaultValue": "50",
+            "allowedValues": [
+                "50",
+                "100",
+                "200",
+                "300",
+                "400",
+                "800",
+                "1200",
+                "1600",
+                "2000",
+                "2500",
+                "3000",
+                "125",
+                "250",
+                "500",
+                "1000",
+                "1500",
+                "2000",
+                "2500",
+                "3000",
+                "3500",
+                "4000",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "16",
+                "24",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10",
+                "12",
+                "14",
+                "16",
+                "18",
+                "20",
+                "24",
+                "32",
+                "40",
+                "80"
+            ],
+            "metadata": {
+                "description": "The per database performance minimum. This should MATCH the poolLimit parameter."
+            }
+        },
+        "epTier": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "The Elastic Pool tier."
+            },
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium",
+                "GeneralPurpose",
+                "BusinessCritical"
+            ]
+        },
+        "epSkuName": {
+            "type": "string",
+            "defaultValue": "StandardPool",
+            "metadata": {
+                "description": "The Elastic Pool tier."
+            },
+            "allowedValues": [
+                "BasicPool",
+                "StandardPool",
+                "PremiumPool",
+                "GP_Gen4",
+                "GP_Gen5",
+                "BC_Gen4",
+                "BC_Gen5"
+            ]
+        },
+        "tier": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "Database server Tier. Basic, Standard (S0), Premium (P1)"
+            },
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium",
+                "GeneralPurpose",
+                "BusinessCritical"
+            ]
+        },
+        "dbSkuName": {
+            "type": "string",
+            "defaultValue": "S0",
+            "metadata": {
+                "description": "Database tier SKU identifier. Basic. Standard (S0), Premium (P1). If selecting 'Yes' to ElasticPool, you MUST select ElasticPool as the SKU Name."
+            },
+            "allowedValues": [
+                "Basic",
+                "ElasticPool",
+                "S0",
+                "S1",
+                "S2",
+                "S3",
+                "S4",
+                "S6",
+                "S7",
+                "S9",
+                "S12",
+                "P1",
+                "P2",
+                "P4",
+                "P6",
+                "P11",
+                "P15",
+                "GP_Gen4_1",
+                "GP_Gen4_2",
+                "GP_Gen4_3",
+                "GP_Gen4_4",
+                "GP_Gen4_5",
+                "GP_Gen4_6",
+                "GP_Gen4_7",
+                "GP_Gen4_8",
+                "GP_Gen4_9",
+                "GP_Gen4_10",
+                "GP_Gen4_16",
+                "GP_Gen4_24",
+                "GP_Gen5_2",
+                "GP_Gen5_4",
+                "GP_Gen5_6",
+                "GP_Gen5_8",
+                "GP_Gen5_10",
+                "GP_Gen5_12",
+                "GP_Gen5_14",
+                "GP_Gen5_16",
+                "GP_Gen5_18",
+                "GP_Gen5_20",
+                "GP_Gen5_24",
+                "GP_Gen5_32",
+                "GP_Gen5_40",
+                "GP_Gen5_80",
+                "BC_Gen4_1",
+                "BC_Gen4_2",
+                "BC_Gen4_3",
+                "BC_Gen4_4",
+                "BC_Gen4_5",
+                "BC_Gen4_6",
+                "BC_Gen4_7",
+                "BC_Gen4_8",
+                "BC_Gen4_9",
+                "BC_Gen4_10",
+                "BC_Gen4_16",
+                "BC_Gen4_24",
+                "BC_Gen5_2",
+                "BC_Gen5_4",
+                "BC_Gen5_6",
+                "BC_Gen5_8",
+                "BC_Gen5_10",
+                "BC_Gen5_12",
+                "BC_Gen5_14",
+                "BC_Gen5_16",
+                "BC_Gen5_18",
+                "BC_Gen5_20",
+                "BC_Gen5_24",
+                "BC_Gen5_32",
+                "BC_Gen5_40",
+                "BC_Gen5_80"
+        
+            ]
+        },
+        "databaseNames": {
+            "type": "array",
+            "defaultValue": [
+                "db1",
+                "db2"
+            ],
+            "metadata": {
+                "description": "The SQL Databases names. You can add/remove databases by following the default naming sequence. These databases will all be added to the ElasticPool (if applicable)."
+            }
+        },
+        "databaseCollation": {
+            "type": "string",
+            "defaultValue": "SQL_Latin1_General_CP1_CI_AS",
+            "metadata": {
+                "description": "The SQL Database collation. Full list available here: https://database.guide/full-list-of-collations-supported-in-sql-server-2017/"
+            }
+        },
+        "alertEmailAddresses": {
+            "type": "array",
+            "defaultValue": [
+              "user1@example.com",
+              "user2@example.com"
+            ],
+            "metadata": {
+              "description": "Email addresses for receiving alerts."
+            }
+          }
+    },
+    "variables": {
+        "templateUri": "https://raw.githubusercontent.com/rbergertd/sql/master/"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[equals(parameters('elasticPool'), 'Yes')]",
+            "apiVersion": "2018-05-01",
+            "name": "sqlElasticDatabase",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('templateUri'), 'nested-sqldbelastic.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "administratorLogin": {
+                        "value": "[parameters('administratorLogin')]"
+                    },
+                    "administratorLoginPassword": {
+                        "value": "[parameters('administratorLoginPassword')]"
+                    },
+                    "databaseCollation": {
+                        "value": "[parameters('databaseCollation')]"
+                    },
+                    "databaseNames": {
+                        "value": "[parameters('databaseNames')]"
+                    },
+                    "elasticPool": {
+                        "value": "[parameters('elasticPool')]"
+                    },
+                    "elasticPoolName": {
+                        "value": "[parameters('elasticPoolName')]"
+                    },
+                    "poolLimit": {
+                        "value": "[parameters('poolLimit')]"
+                    },
+                    "poolSize": {
+                        "value": "[parameters('poolSize')]"
+                    },
+                    "perDatabasePerformanceMin": {
+                        "value": "[parameters('perDatabasePerformanceMin')]"
+                    },
+                    "perDatabasePerformanceMax": {
+                        "value": "[parameters('perDatabasePerformanceMax')]"
+                    },
+                    "epTier": {
+                        "value": "[parameters('epTier')]"
+                    },
+                    "epSkuName": {
+                        "value": "[parameters('epSkuName')]"
+                    },
+                    "serverName": {
+                        "value": "[parameters('serverName')]"
+                    },
+                    "alertEmailAddresses": {
+                        "value": "[parameters('alertEmailAddresses')]"
+                    } 
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[equals(parameters('elasticPool'), 'No')]",
+            "apiVersion": "2018-05-01",
+            "name": "sqlDatabase",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('templateUri'), 'nested-sqldb.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "administratorLogin": {
+                        "value": "[parameters('administratorLogin')]"
+                    },
+                    "administratorLoginPassword": {
+                        "value": "[parameters('administratorLoginPassword')]"
+                    },
+                    "databaseCollation": {
+                        "value": "[parameters('databaseCollation')]"
+                    },
+                    "databaseNames": {
+                        "value": "[parameters('databaseNames')]"
+                    },
+                    "tier": {
+                        "value": "[parameters('tier')]"
+                    },
+                    "dbSkuName": {
+                        "value": "[parameters('dbSkuName')]"
+                    },
+                    "alertEmailAddresses": {
+                        "value": "[parameters('alertEmailAddresses')]"
+                    },
+                    "serverName": {
+                        "value": "[parameters('serverName')]"
+                    }
+                    
+                }
+            }
+        }
+    ]
+}

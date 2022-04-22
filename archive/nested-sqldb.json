@@ -1,0 +1,237 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "administratorLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "The SQL Server administrator login"
+            }
+        },
+        "administratorLoginPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The SQL Server administrator login password."
+            }
+        },
+        "serverName": {
+            "type": "string",
+            "metadata": {
+                "description": "The SQL Server name."
+            }
+        },
+        "tier": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "Database server Tier. Basic, Standard (S0), Premium (P1)"
+            },
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium",
+                "GeneralPurpose",
+                "BusinessCritical"
+            ]
+        },
+        "dbSkuName": {
+            "type": "string",
+            "defaultValue": "S0",
+            "metadata": {
+                "description": "Database tier SKU identifier. Basic. Standard (S0), Premium (P1). If selecting 'Yes' to ElasticPool, you MUST select ElasticPool as the SKU Name."
+            },
+            "allowedValues": [
+                "Basic",
+                "ElasticPool",
+                "S0",
+                "P1",
+                "GP_Gen4_1",
+                "GP_Gen4_2",
+                "GP_Gen4_4",
+                "GP_Gen5_1",
+                "GP_Gen5_2",
+                "GP_Gen5_4",
+                "BC_Gen4_1",
+                "BC_Gen4_2",
+                "BC_Gen4_4",
+                "BC_Gen5_1",
+                "BC_Gen5_2",
+                "BC_Gen5_4"
+            ]
+        },
+        "databaseNames": {
+            "type": "array",
+            "defaultValue": [
+                "db1",
+                "db2"
+            ],
+            "metadata": {
+                "description": "The SQL Databases names."
+            }
+        },
+        "databaseCollation": {
+            "type": "string",
+            "defaultValue": "SQL_Latin1_General_CP1_CI_AS",
+            "metadata": {
+                "description": "The SQL Database collation."
+            }
+        },
+        "alertEmailAddresses": {
+            "type": "array",
+            "defaultValue": [
+                "user1@example.com",
+                "user2@example.com"
+            ],
+            "metadata": {
+                "description": "Email addresses for receiving alerts"
+            }
+        }
+    },
+    "variables": {
+        "resourceGroupLocation": "[resourceGroup().location]",
+        "sqlAtpStorage": "[concat('sqlatp', uniqueString(resourceGroup().id, deployment().name))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('sqlAtpStorage')]",
+            "apiVersion": "2018-02-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "Storage",
+            "properties": {}
+        },
+        {
+            "apiVersion": "2017-10-01-preview",
+            "location": "[variables('resourceGroupLocation')]",
+            "name": "[parameters('serverName')]",
+            "properties": {
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "version": "12.0"
+            },
+            "type": "Microsoft.Sql/servers",
+            "resources": [
+                {
+                    "type": "securityAlertPolicies",
+                    "name": "SQLSecurityAlerts",
+                    "apiVersion": "2017-03-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', parameters('servername'))]"
+                    ],
+                    "properties": {
+                        "state": "Enabled",
+                        "emailAddresses": "[parameters('alertEmailAddresses')]",
+                        "emailAccountAdmins": true
+                    }
+                },
+                {
+                    "type": "vulnerabilityAssessments",
+                    "name": "SQLVulnerabilityAssessments",
+                    "apiVersion": "2018-06-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', parameters('servername'))]",
+                        "[concat('Microsoft.Storage/storageAccounts/', variables('sqlAtpStorage'))]"
+                    ],
+                    "properties": {
+                        "storageContainerPath": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('sqlAtpStorage'))).primaryEndpoints.blob, 'vulnerability-assessment')]",
+                        "storageAccountAccessKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('sqlAtpStorage')), '2018-02-01').keys[0].value]",
+                        "recurringScans": {
+                            "isEnabled": true,
+                            "emailSubscriptionAdmins": true,
+                            "emails": "[parameters('alertEmailAddresses')]"
+                        }
+                    }
+                },
+                {
+                    "type": "auditingSettings",
+                    "name": "SQLAuditingSettings",
+                    "apiVersion": "2017-03-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', parameters('servername'))]",
+                        "[concat('Microsoft.Storage/storageAccounts/', variables('sqlAtpStorage'))]"
+                    ],
+                    "properties": {
+                        "state": "Enabled",
+                        "storageEndpoint": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('sqlAtpStorage')), '2018-03-01-preview').primaryEndpoints.blob]",
+                        "storageAccountAccessKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('sqlAtpStorage')), '2018-03-01-preview').keys[0].value]",
+                        "storageAccountSubscriptionId": "[subscription().subscriptionId]",
+                        "auditActionsAndGroups": null,
+                        "isStorageSecondaryKeyInUse": false
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/advisors",
+            "name": "[concat(parameters('servername'), '/', 'ForceLastGoodPlan')]",
+            "apiVersion": "2014-04-01",
+            "scale": null,
+            "properties": {
+                "autoExecuteValue": "Enabled"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('servername'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/advisors",
+            "name": "[concat(parameters('servername'), '/', 'CreateIndex')]",
+            "apiVersion": "2014-04-01",
+            "scale": null,
+            "properties": {
+                "autoExecuteValue": "Enabled"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('servername'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/advisors",
+            "name": "[concat(parameters('servername'), '/', 'DropIndex')]",
+            "apiVersion": "2014-04-01",
+            "scale": null,
+            "properties": {
+                "autoExecuteValue": "Disabled"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('servername'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "name": "[concat(parameters('serverName'), '/', parameters('databaseNames')[copyIndex()])]",
+            "location": "[variables('resourceGroupLocation')]",
+            "apiVersion": "2017-10-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Sql/servers/', parameters('serverName'))]"
+            ],
+            "sku": {
+                "name": "[parameters('dbSkuName')]",
+                "tier": "[parameters('tier')]"
+            },
+            "properties": {
+                "collation": "[parameters('databaseCollation')]"
+            },
+            "copy": {
+                "name": "addDatabases",
+                "count": "[length(parameters('databaseNames'))]"
+            }
+        },
+        {
+            "apiVersion": "2014-04-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Sql/servers/', parameters('serverName'))]"
+            ],
+            "location": "[variables('resourceGroupLocation')]",
+            "name": "[concat(parameters('serverName'), '/', 'AllowAllWindowsAzureIps')]",
+            "properties": {
+                "endIpAddress": "0.0.0.0",
+                "startIpAddress": "0.0.0.0"
+            },
+            "type": "Microsoft.Sql/servers/firewallrules"
+        }
+    ]
+}
