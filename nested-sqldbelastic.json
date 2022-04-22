@@ -205,6 +205,7 @@
                     ]
                 },
                 {
+                    "condition": "[parameters('enableVA')]",
                     "type": "auditingSettings",
                     "name": "SQLAuditingSettings",
                     "apiVersion": "2017-03-01-preview",
