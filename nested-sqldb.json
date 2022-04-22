@@ -276,8 +276,8 @@
                     ],
                     "properties": {
                         "state": "Enabled",
-                        "storageEndpoint": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('sqlVaStorage')), '2018-03-01-preview').primaryEndpoints.blob]",
-                        "storageAccountAccessKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('sqlVaStorage')), '2018-03-01-preview').keys[0].value]",
+                        "storageEndpoint": "[if(parameters('enableVA'), reference(resourceId('Microsoft.Storage/storageAccounts', variables('sqlVaStorage')), '2018-03-01-preview').primaryEndpoints.blob, '')]",
+                        "storageAccountAccessKey": "[if(parameters('enableVA'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('sqlVaStorage')), '2018-03-01-preview').keys[0].value, '')]",
                         "storageAccountSubscriptionId": "[subscription().subscriptionId]",
                         "auditActionsAndGroups": null,
                         "isStorageSecondaryKeyInUse": false
